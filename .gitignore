@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+*.pt
+# generated results are produced by real runs; commit only what you deliberately choose to
+results/*
+!results/.gitkeep
