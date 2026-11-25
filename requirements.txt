@@ -1,0 +1,18 @@
+# Versions below are the ones the code was tested with (CPU smoke test, Python 3.12).
+# On Kaggle/Colab torch + torchvision are PRE-INSTALLED with the right CUDA build: do NOT reinstall them.
+# There, only run:  pip install imagehash
+torch==2.15.0
+torchvision==0.29.2
+numpy==2.5.4
+pandas==3.1.1
+scikit-learn==1.9.1
+matplotlib==3.11.2
+pillow==13.0.0
+PyYAML==6.0.4
+tqdm==4.70.1
+imagehash==4.3.2
+scipy==1.18.1          # imagehash dependency
+# notebook tooling (only needed to build/execute the notebook outside Kaggle)
+nbformat==5.11.1
+nbconvert==7.17.2
+ipykernel==7.4.0
