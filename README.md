@@ -1,11 +1,9 @@
-# AgroSense: multimodal crop disease diagnosis (AI341 semester project)
+# AgroSense: multimodal crop disease diagnosis 
 
 Question: does fusing a leaf photo with a short text note beat image-only classification, especially under
 domain shift (lab photos -> real field photos)? **This repo currently contains Phase 1 only**: data pipeline +
 image-only EfficientNet-B0 baseline, evaluated on an in-distribution (ID) test set and a shifted test set.
 
-> **AI-use disclosure:** the code in this repository was written with the assistance of an AI coding tool (Claude).
-> The author has reviewed it and is responsible for being able to explain every part.
 
 ## Layout
 ```
