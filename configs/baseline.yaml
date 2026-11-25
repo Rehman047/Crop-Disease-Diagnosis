@@ -1,0 +1,93 @@
+# AgroSense - Phase 1 baseline (image-only EfficientNet-B0)
+# Every experiment is a config. Later ablations change a line here, not the code.
+
+experiment_name: baseline_image_only
+seeds: [42, 123, 456]       # training seeds (model init, data order, augmentation)
+split_seed: 42              # SEPARATE from the training seeds: all seeds share ONE train/val/test split,
+                            # otherwise mean +/- std would mix "different model" with "different data".
+
+paths:
+  # Leave null to auto-detect under /kaggle/input. Or set explicit folders (local machine, Colab, ...).
+  plantvillage_root: null   # folder that CONTAINS the class folders (e.g. .../plantvillage dataset/color)
+  plantdoc_root: null       # folder that contains the PlantDoc split folders (train/ and test/)
+  results_dir: results
+
+data:
+  image_size: 224           # use 160 for speed
+  batch_size: 64
+  num_workers: 2
+  split_ratios: {train: 0.70, val: 0.15, test: 0.15}
+  # Near-duplicate detection (PlantVillage has many shots of the same physical leaf).
+  phash_max_distance: 4     # Hamming distance (of 64 bits) at or below which two images are "the same leaf"
+  phash_dihedral: true      # also compare against rotated/flipped versions (PlantVillage re-photographs leaves)
+  plantvillage_prefer_subdir: color    # PlantVillage often ships color/ grayscale/ segmented/ -> use color
+  plantdoc_dirs: [train, test]  # PlantDoc folders used as the SHIFTED TEST set. We never train on any of them,
+                                # so using both folders only gives more test images. Set [test] for the official test split.
+  # ---- Class-name normalisation (edit these if the printed mapping looks wrong) ----
+  # Applied after lower-casing, replacing _ - , with spaces, and dropping words in `ignore_words`.
+  ignore_words: [leaf, leaves, plant, the]
+  crop_aliases:             # raw crop text -> canonical crop
+    corn maize: corn
+    pepper bell: pepper
+    bell pepper: pepper
+    soyabean: soybean
+    cherry including sour: cherry
+  condition_aliases:        # condition text (crop prefix + ignore_words removed) -> canonical condition.
+    # ASSUMPTIONS - each line is a judgement call that YOU must verify against the mapping CSV:
+    common rust: rust             # PV "Corn___Common_rust_"   ~ PlantDoc "Corn rust leaf"
+    cedar apple rust: rust        # PV "Apple___Cedar_apple_rust" ~ PlantDoc "Apple rust leaf"
+    northern blight: blight       # PV "Corn___Northern_Leaf_Blight" ~ PlantDoc "Corn leaf blight"
+    cercospora spot gray spot: gray spot   # PV "Corn___Cercospora_leaf_spot Gray_leaf_spot" ~ PlantDoc "Corn Gray leaf spot"
+    yellow curl virus: yellow virus        # PV "Tomato_Yellow_Leaf_Curl_Virus" ~ PlantDoc "Tomato leaf yellow virus"
+    spider mites two spotted spider mite: spider mites      # PV name
+    two spotted spider mites: spider mites                  # PlantDoc name
+
+model:
+  name: efficientnet_b0
+  pretrained: true          # needs internet once (downloads ImageNet weights)
+  dropout: 0.3
+
+loss:
+  name: ce_weighted         # ce_weighted | focal | ce_label_smoothing   (Phase 1 trains ONLY ce_weighted)
+  focal_gamma: 2.0
+  label_smoothing: 0.1
+
+train:
+  epochs: 20
+  lr: 0.0003
+  weight_decay: 0.01
+  scheduler: cosine         # cosine | step
+  step_size: 7              # only used by step
+  step_gamma: 0.1
+  amp: true                 # mixed precision (only active on CUDA)
+  early_stop_patience: 5    # epochs without improvement of ID-VALIDATION macro F1
+
+eval:
+  ece_bins: 15
+  latency_warmup: 10
+  latency_runs: 50
+  # Project targets (from the brief). We REPORT the achieved value of each; missing one is a finding, not an error.
+  targets: {high_cost_recall: 0.90, shifted_macro_f1: 0.75, params_m: 25, latency_ms: 100, ece: 0.10}
+  # HIGH-COST CLASSES: PROPOSED DEFAULT, NOT SETTLED. Heuristic = fast-spreading blights, rusts and viral diseases.
+  # The team must confirm this list with a written justification (e.g. agronomy source) before reporting.
+  # Names are "<crop>___<condition>" after normalisation; names absent from the class intersection are
+  # reported with a warning and ignored.
+  high_cost_classes:
+    - tomato___late blight
+    - potato___late blight
+    - potato___early blight
+    - tomato___early blight
+    - corn___rust
+    - apple___rust
+    - tomato___yellow virus
+    - tomato___mosaic virus
+
+# Quick pipeline check (--smoke). Writes to results/smoke/, never to real results.
+smoke:
+  enabled: false
+  n_images: 200             # PlantVillage images used
+  n_shifted_images: 100     # PlantDoc images used
+  epochs: 2
+  image_size: 96
+  batch_size: 16
+  num_workers: 0
