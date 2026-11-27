@@ -41,6 +41,7 @@ data:
     yellow curl virus: yellow virus        # PV "Tomato_Yellow_Leaf_Curl_Virus" ~ PlantDoc "Tomato leaf yellow virus"
     spider mites two spotted spider mite: spider mites      # PV name
     two spotted spider mites: spider mites                  # PlantDoc name
+    spot: bacterial spot          # PlantDoc "Bell_pepper_leaf_spot" ~ PV "Pepper,_bell___Bacterial_spot" (ASSUMPTION: verify)
 
 model:
   name: efficientnet_b0
